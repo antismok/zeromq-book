@@ -16,6 +16,8 @@ ZeroMQ, так же известная как  ØMQ, 0MQ, zmq, или Зера, 
 ### Как все начиналось (How It Began)
 
 Мы взяли обычные tcp сокеты, добавили в них смесь радиоактивных изотопов похищенных из секретного советского проекта атомных исследований, бомбанули по нему космическими лучами 1950-х годов и отдали его в руки обдолбанного автора комиксов с фетишем обтягивающего трико. Да сокеты ZeroMQ это супергерои которые призваны спасти сетевой мир.
+###### Рисунок 1: Страшная катастрофа.
+![](https://github.com/imatix/zguide/raw/master/images/fig1.png)
 
 ### Дзен ZeroMQ (The Zen of Zero)
 
@@ -76,25 +78,129 @@ ZeroMQ, так же известная как  ØMQ, 0MQ, zmq, или Зера, 
 
 ### Просите и дано вам будет (Ask and Ye Shall Receive).
 
-Давайте же уже перейдем к коду. Разумеется мы начнем с Hello World. Для начала создадим клиента и сервер. Клиент отправляет "HELLO" на сервер и получает в ответ "WORLD"(рис 2).
-В примере болок кода сервера на языке СИ. Он отрывает сокет Зеры на порту 5555, читает из него запросы и отчечает "WORLD" на каждый из них.
+Давайте же уже перейдем к коду. Разумеется мы начнем с Hello World. Для начала создадим клиента и сервер. Клиент отправляет "HELLO" на сервер и получает в ответ "WORLD" (рис 2).
+В примере блок кода сервера на языке СИ. Он открывает сокет Зеры на порту 5555, читает из него запросы и отвечает "WORLD" на каждый из них.
 
-Пара сокетоа типа REQ-REP(запрос-ответ) являются последовательно-зависимой. Клиент в цикле сначала отправляет запрос zmq_send() и только после этого ждет ответ then zmq_recv(). Использование другой последовательности (к примеру отправка подряд двух сообщений) приведет к тому что функция вернет -1. Аналогичным образом сервисы сначала слущают запрос zmq_recv() и только после этого отправляют на него ответ zmq_send().
+*сервер Hello World на СИ*
+```
+//  Hello World server
 
-Зера использует Си и это так же основной язык для написания примеров. Если вы читаете это на сайте то снизу будут ссылки для примеров переведенных на разные языки. Теперь давайте сравним аналогичный серве на С++:
-Example 2. Hello World server (hwserver.cpp)
+#include <zmq.h>
+#include <stdio.h>
+#include <unistd.h>
+#include <string.h>
+#include <assert.h>
 
-Как вы можете убедиться API для языков СИ и С++ аналогичны. На языке таком как php, мы можем скрыть большинство реализации и сделать код еще более легким и читаемым:
-Example 3. Hello World server (hwserver.php)
+int main (void)
+{
+    //  Socket to talk to clients
+    void *context = zmq_ctx_new ();
+    void *responder = zmq_socket (context, ZMQ_REP);
+    int rc = zmq_bind (responder, "tcp://*:5555");
+    assert (rc == 0);
 
-А вот код клиента:
-Example 4. Hello World client (hwclient.c)
+    while (1) {
+        char buffer [10];
+        zmq_recv (responder, buffer, 10, 0);
+        printf ("Received Hello\n");
+        sleep (1);          //  Do some 'work'
+        zmq_send (responder, "World", 5, 0);
+    }
+    return 0;
+}```
 
-Теперь это выглядит слишком просто чтобы быть правдой, но не забывайте что сокеты Зеры имеют суперсилы. Вы можете навешать на этот сервер тысячи клиентов и он проболжит работать быстро и припеваючи работать. Для прикола запустите сначала клиента и только потом сервер. Смотри это все еще работает и не падает, задумайтесь на секунду почему так происходит.
+Пара сокетов типа REQ-REP(запрос-ответ) являются последовательно-зависимой. Клиент в цикле сначала отправляет запрос [zmq_send()](http://api.zeromq.org/3-2:zmq_send) и только после этого ждет ответ [zmq_recv()](http://api.zeromq.org/3-2:zmq_recv). Использование другой последовательности (к примеру отправка подряд двух сообщений) приведет к тому что функция вернет -1. Аналогичным образом сервисы сначала слушают запрос [zmq_recv()]http://api.zeromq.org/3-2:zmq_recv) и только после этого отправляют на него ответ [zmq_send()](http://api.zeromq.org/3-2:zmq_send).
 
-Давайте кратко посмотрим как эти две программы действительно работают. Они создают контекст Зеры и сокеты для работы. Не запаривайтесь о значении этих терминов. Скоро вы все поймете. Сервер навешивает свой сокет REP(ответ) на порт 5555. Сервер в цикле ожидет запроса, и отвечает на каждый. Клиент отправляет запрос и ожидает на него ответа. Если вы перезапустите сервер, клиент сам не поднимется. Поднятие после сбоят так просто не пройдет. Создание отказоустойчивых соединений типа запрос-ответ(request-reply) довольно сложный процесс и мы до него еще дойдем когда будем рассматривать "надежные паттерны ответ-запрос"("Reliable Request-Reply Patterns"). 
+Зера использует Си и это так же основной язык для написания примеров. Если вы читаете это на сайте то внизу будут ссылки для примеров переведенных на разные языки. Теперь давайте сравним аналогичный сервер на С++:
 
-Многое произходит за кадром, на для нас программистов важно чтобы код был красивым, аккуратным и не падал под нагрузками. Это паттерн запрос-ответ(request-reply), возможно простейший способ использования Зеры. Это отражение RPC и классической клиент-серверной модели.
+###### *hwserver.cpp: Hello World server*
+```
+//
+//  Hello World server in C++
+//  Binds REP socket to tcp://*:5555
+//  Expects "Hello" from client, replies with "World"
+//
+#include <zmq.hpp>
+#include <string>
+#include <iostream>
+#ifndef _WIN32
+#include <unistd.h>
+#else
+#include <windows.h>
+
+#define sleep(n)    Sleep(n)
+#endif
+
+int main () {
+    //  Prepare our context and socket
+    zmq::context_t context (1);
+    zmq::socket_t socket (context, ZMQ_REP);
+    socket.bind ("tcp://*:5555");
+
+    while (true) {
+        zmq::message_t request;
+
+        //  Wait for next request from client
+        socket.recv (&request);
+        std::cout << "Received Hello" << std::endl;
+
+        //  Do some 'work'
+        sleep(1);
+
+        //  Send reply back to client
+        zmq::message_t reply (5);
+        memcpy (reply.data (), "World", 5);
+        socket.send (reply);
+    }
+    return 0;
+}```
+
+###### * Рисунок 2. Запрос-ответ (Request-Reply)*
+![](https://github.com/imatix/zguide/raw/master/images/fig2.png)
+
+Как вы можете убедиться API для языков СИ и С++ аналогичны. На языке таком как php или java, мы можем скрыть большинство реализации и сделать код еще более легким и читаемым:
+
+###### * Пример 3. сервер Hello World на php (hwserver.php) *
+
+```
+<?php
+
+/*
+ *  Hello World server
+ *  Binds REP socket to tcp://*:5555
+ *  Expects "Hello" from client, replies with "World"
+ *  @author Ian Barber <ian(dot)barber(at)gmail(dot)com>
+ */
+
+$context = new ZMQContext(1);
+
+//  Socket to talk to clients
+$responder = new ZMQSocket($context, ZMQ::SOCKET_REP);
+$responder->bind("tcp://*:5555");
+
+while (true) {
+    //  Wait for next request from client
+    $request = $responder->recv();
+    printf ("Received request: [%s]\n", $request);
+
+    //  Do some 'work'
+    sleep (1);
+
+    //  Send reply back to client
+    $responder->send("World");
+}```
+
+###### Пример сервера на других языках:
+[ C++ ](http://zguide.zeromq.org/cpp:hwserver)|[ C# ](http://zguide.zeromq.org/cs:hwserver)|[ Clojure ](http://zguide.zeromq.org/clj:hwserver)|[ CL ](http://zguide.zeromq.org/lisp:hwserver)|[ Delphi ](http://zguide.zeromq.org/dpr:hwserver)|[ Erlang ](http://zguide.zeromq.org/es:hwserver)|[ F# ](http://zguide.zeromq.org/fsx:hwserver)|[ Felix ](http://zguide.zeromq.org/flx:hwserver)|[ Go ](http://zguide.zeromq.org/go:hwserver)|[ Haskell ](http://zguide.zeromq.org/hs:hwserver)|[ Haxe ](http://zguide.zeromq.org/hx:hwserver)|[ Lua ](http://zguide.zeromq.org/lua:hwserver)|[ Node.js ](http://zguide.zeromq.org/js:hwserver)|[ Objective-C ](http://zguide.zeromq.org/m:hwserver)|[ Perl ](http://zguide.zeromq.org/pl:hwserver)|[ PHP ](http://zguide.zeromq.org/php:hwserver)|[ Python ](http://zguide.zeromq.org/py:hwserver)|[ Q ](http://zguide.zeromq.org/q:hwserver)|[ Racket ](http://zguide.zeromq.org/rkt:hwserver)|[ Ruby ](http://zguide.zeromq.org/rb:hwserver)|[ Scala ](http://zguide.zeromq.org/scala:hwserver)|[ Tcl ](http://zguide.zeromq.org/tcl:hwserver)|[ Ada | Basic | Java | ooc ](http://zguide.zeromq.org/main:translate)
+
+###### Пример клиента на других языках:
+[ C++ ](http://zguide.zeromq.org/cpp:hwclient)|[ C# ](http://zguide.zeromq.org/cs:hwclient)|[ Clojure ](http://zguide.zeromq.org/clj:hwclient)|[ CL ](http://zguide.zeromq.org/lisp:hwclient)|[ Delphi ](http://zguide.zeromq.org/dpr:hwclient)|[ Erlang ](http://zguide.zeromq.org/es:hwclient)|[ F# ](http://zguide.zeromq.org/fsx:hwclient)|[ Felix ](http://zguide.zeromq.org/flx:hwclient)|[ Go ](http://zguide.zeromq.org/go:hwclient)|[ Haskell ](http://zguide.zeromq.org/hs:hwclient)|[ Haxe ](http://zguide.zeromq.org/hx:hwclient)|[ Lua ](http://zguide.zeromq.org/lua:hwclient)|[ Node.js ](http://zguide.zeromq.org/js:hwclient)|[ Objective-C ](http://zguide.zeromq.org/m:hwclient)|[ Perl ](http://zguide.zeromq.org/pl:hwclient)|[ PHP ](http://zguide.zeromq.org/php:hwclient)|[ Python ](http://zguide.zeromq.org/py:hwclient)|[ Q ](http://zguide.zeromq.org/q:hwclient)|[ Racket ](http://zguide.zeromq.org/rkt:hwclient)|[ Ruby ](http://zguide.zeromq.org/rb:hwclient)|[ Scala ](http://zguide.zeromq.org/scala:hwclient)|[ Tcl ](http://zguide.zeromq.org/tcl:hwclient)|[ Ada | Basic | Java | ooc ](http://zguide.zeromq.org/main:translate)
+
+Теперь это выглядит слишком просто, чтобы быть правдой, но не забывайте, что сокеты Зеры имеют суперсилы. Вы можете навешать на этот сервер тысячи клиентов и он продолжит быстро и припеваючи работать. Ради интереса запустите сначала клиента и только потом сервер. Смотри это все еще работает и не падает, задумайтесь на секунду почему так происходит.
+
+Давайте кратко посмотрим как эти две программы действительно работают. Они создают контекст Зеры и сокеты для работы. Не задумывайтесь о значении этих терминов. Скоро вы все поймете. Сервер навешивает свой сокет REP(ответ) на порт 5555. Сервер в цикле ожидает запроса, и отвечает на каждый. Клиент отправляет запрос и ожидает на него ответа. Если вы перезапустите сервер, клиент сам не поднимется. Поднятие после сбоят так просто не пройдет. Создание отказоустойчивых соединений типа запрос-ответ(request-reply) довольно сложный процесс и мы до него еще дойдем когда будем рассматривать "надежные паттерны ответ-запрос ("Reliable Request-Reply Patterns").
+
+Многое происходит за кадром, но для нас программистов важно чтобы код был красивым, аккуратным и не падал под нагрузками. Паттерн запрос-ответ(request-reply), возможно простейший способ использования Зеры. Это отражение RPC и классической клиент-серверной модели.
 
 ### СНОСОЧКА ПРО СТРОКИ(A Minor Note on Strings)
 
