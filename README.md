@@ -85,7 +85,8 @@ ZeroMQ, так же известная как  ØMQ, 0MQ, zmq, или Зера, 
 В примере блок кода сервера на языке Си. Он открывает сокет Зеры на порту 5555, читает из него запросы и отвечает "WORLD" на каждый из них.
 
 *сервер Hello World на СИ*
-```
+
+```C
 //  Hello World server
 
 #include <zmq.h>
@@ -110,14 +111,16 @@ int main (void)
         zmq_send (responder, "World", 5, 0);
     }
     return 0;
-}```
+}
+```
+
 
 Пара сокетов типа REQ-REP(запрос-ответ) являются последовательно-зависимой. Клиент в цикле сначала отправляет запрос [zmq_send()](http://api.zeromq.org/3-2:zmq_send) и только после этого ждет ответ [zmq_recv()](http://api.zeromq.org/3-2:zmq_recv). Использование другой последовательности (к примеру отправка подряд двух сообщений) приведет к тому что функция вернет -1. Аналогичным образом сервисы сначала слушают запрос [zmq_recv()](http://api.zeromq.org/3-2:zmq_recv) и только после этого отправляют на него ответ [zmq_send()](http://api.zeromq.org/3-2:zmq_send).
 
 Зера использует Си и это так же основной язык для написания примеров. Если вы читаете это на сайте то внизу будут ссылки для примеров переведенных на разные языки. Теперь давайте сравним аналогичный сервер на С++:
 
 ###### *hwserver.cpp: Hello World server*
-```
+```C
 //
 //  Hello World server in C++
 //  Binds REP socket to tcp://*:5555
@@ -156,13 +159,14 @@ int main () {
         socket.send (reply);
     }
     return 0;
-}```
+}
+```
 
 Как вы можете убедиться API для языков СИ и С++ аналогичны. На языке таком как php или java, мы можем скрыть большинство реализации и сделать код еще более легким и читаемым:
 
 ###### * Пример 3. сервер Hello World на php (hwserver.php) *
 
-```
+```php
 <?php
 
 /*
@@ -188,7 +192,8 @@ while (true) {
 
     //  Send reply back to client
     $responder->send("World");
-}```
+}
+```
 
 ###### Пример сервера на других языках:
 [ C++ ](http://zguide.zeromq.org/cpp:hwserver)|[ C# ](http://zguide.zeromq.org/cs:hwserver)|[ Clojure ](http://zguide.zeromq.org/clj:hwserver)|[ CL ](http://zguide.zeromq.org/lisp:hwserver)|[ Delphi ](http://zguide.zeromq.org/dpr:hwserver)|[ Erlang ](http://zguide.zeromq.org/es:hwserver)|[ F# ](http://zguide.zeromq.org/fsx:hwserver)|[ Felix ](http://zguide.zeromq.org/flx:hwserver)|[ Go ](http://zguide.zeromq.org/go:hwserver)|[ Haskell ](http://zguide.zeromq.org/hs:hwserver)|[ Haxe ](http://zguide.zeromq.org/hx:hwserver)|[ Lua ](http://zguide.zeromq.org/lua:hwserver)|[ Node.js ](http://zguide.zeromq.org/js:hwserver)|[ Objective-C ](http://zguide.zeromq.org/m:hwserver)|[ Perl ](http://zguide.zeromq.org/pl:hwserver)|[ PHP ](http://zguide.zeromq.org/php:hwserver)|[ Python ](http://zguide.zeromq.org/py:hwserver)|[ Q ](http://zguide.zeromq.org/q:hwserver)|[ Racket ](http://zguide.zeromq.org/rkt:hwserver)|[ Ruby ](http://zguide.zeromq.org/rb:hwserver)|[ Scala ](http://zguide.zeromq.org/scala:hwserver)|[ Tcl ](http://zguide.zeromq.org/tcl:hwserver)|[ Ada | Basic | Java | ooc ](http://zguide.zeromq.org/main:translate)
