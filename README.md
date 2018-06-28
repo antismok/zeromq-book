@@ -486,7 +486,7 @@ int main (void)
 ```
 [C++](http://zguide.zeromq.org/cpp:taskvent) | [C#](http://zguide.zeromq.org/cs:taskvent) | [Clojure](http://zguide.zeromq.org/clj:taskvent) | [CL](http://zguide.zeromq.org/lisp:taskvent) | [Delphi](http://zguide.zeromq.org/dpr:taskvent) | [Erlang](http://zguide.zeromq.org/es:taskvent) | [F#](http://zguide.zeromq.org/fsx:taskvent) | [Felix](http://zguide.zeromq.org/flx:taskvent) | [Go](http://zguide.zeromq.org/go:taskvent) | [Haskell](http://zguide.zeromq.org/hs:taskvent) | [Haxe](http://zguide.zeromq.org/hx:taskvent) | [Java](http://zguide.zeromq.org/java:Taskvent) | [Lua](http://zguide.zeromq.org/lua:taskvent) | [Node.js](http://zguide.zeromq.org/js:taskvent) | [Objective-C](http://zguide.zeromq.org/m:taskvent) | [Perl](http://zguide.zeromq.org/pl:taskvent) | [PHP](http://zguide.zeromq.org/php:taskvent) | [Python](http://zguide.zeromq.org/py:taskvent) | [Ruby](http://zguide.zeromq.org/rb:taskvent) | [Scala](http://zguide.zeromq.org/scala:taskvent) | [Tcl](http://zguide.zeromq.org/tcl:taskvent) | [Ada](http://zguide.zeromq.org/main:translate) | [Basic](http://zguide.zeromq.org/main:translate) | [ooc](http://zguide.zeromq.org/main:translate) | [Q](http://zguide.zeromq.org/main:translate) | [Racket](http://zguide.zeromq.org/main:translate)
 
-А вот пример воркера. Он получает сообщение, спит определенное количество секунд, после чего сообщает что он закончил.
+А вот пример воркера. Он получает сообщение, спит определенное количество секунд, после чего сообщает, что он закончил.
 
 ###### Пример 9. Параллельний воркер (taskwork.c)
 
@@ -590,14 +590,14 @@ int main (void)
 
 * PUSH сокет вентилятора равномерно распределяет задачи между воркерами(при условии что они все подключились к моменту раздачи). Это называется "балансировкой нагрузки"(load-balancing). Это мы опять же рассмотрим позже.
 
-* PULL сокет стока, равномерно собирает результаты от воркеров.Это называется "справедливой очередью" (fair-queuing) (см. рисунок 6).
+* PULL сокет стока, равномерно собирает результаты от воркеров. Это называется "справедливой очередью" (fair-queuing) (см. рисунок 6).
 
 ###### Рисунок 6. Справедливая очередь (fair-queuing)
 
 ![](https://github.com/imatix/zguide/raw/master/images/fig6.png)
 
-Конвейерному паттерну(pipeline pattern) также свойственен синдром "тормознутого присоединения"(slow joiner), что приводит к мысли, что PUSH сокет неправильно использует балансировщик нагрузки. Если вы используете пару PUSH/PULL и один из ваших воркеров получает больше задач чем остальные, это связано с тем, что PULL сокет вашего воркера быстрее подключается чем остальные, и хапает слишком много сообщений, пока другие не подключились. Если вы ищите способы правильной балансировки, то вам необходимо прочитать Главу 3 - "Продвинутые паттерны запрос-ответ" (Advanced
-Request-Reply Pattern).
+Конвейерному паттерну(pipeline pattern) также свойственен синдром "тормознутого присоединения"(slow joiner), что приводит к мысли, что PUSH сокет неправильно использует балансировщик нагрузки. Если вы используете пару PUSH/PULL и один из ваших воркеров получает больше задач чем остальные, это связано с тем, что PULL сокет вашего воркера быстрее подключается чем остальные, и хапает слишком много сообщений, пока другие не подключились. Если вы ищите способы правильной балансировки, то вам необходимо прочитать [Главу 3 - "Продвинутые паттерны запрос-ответ" (Advanced
+Request-Reply Pattern).](http://)
 
 
 ### ПРОГРАММИРОВАНИЕ С ЗЕРОЙ. (Programming with ØMQ)
