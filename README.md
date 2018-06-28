@@ -420,44 +420,185 @@ sys 0m0.008s
 
 ### РАЗДЕЛЯЙ И ВЛАСТВУЙ (Divide and Conquer)
 
-В качестве последнего примера (вы наверняка уже устали от кода и хотели бы вернуться к философствованию и обсуждению абстрактных норм), давайте произведем немного суперкомпьютеров. Наше суперкомпьютерное приожение является довольно типичной моделью параллельной обработки.
+###### Рисунок 5. Параллельные пайпы
 
-У нас есть: 
-	* Вентилятор который создает задачи которые можно выполнять параллельно
-	* Набор воркеров которые могут обрабатывать задачи.
-	* Сток(имеется ввиду место куда попадают все данные), способный собираеть воедино данные от воркеров.
+![](https://github.com/imatix/zguide/raw/master/images/fig5.png)
 
-В действительности воркеры запускаются в быстродействующих контейнерах, может даже на графических процессорах для сложных расчетов. Вентилятор генерирует 100 задач, каждое из которых говорит воркеру спать определенное количество милисекунд.
+В качестве последнего примера (вы наверняка уже устали от кода и хотели бы вернуться к философствованию и обсуждению абстракций), давайте произведем немного суперкомпьютеров. Наше суперкомпьютерное приложение является довольно типичной моделью параллельной обработки.
 
-Example 8. Parallel task ventilator (taskvent.c)
+У нас есть:
+* Вентилятор, создающий задачи для параллельного выполнения.
+* Набор воркеров, которые могут обрабатывать задачи.
+* Сток(имеется ввиду место куда попадают все данные), способный собирать воедино данные от воркеров.
 
-А вот пример воркера. Он получет сообщение, спит определенно количество секунд, после чего сообщяет что он закончил.
+В действительности воркеры запускаются в быстродействующих контейнерах, может даже на графических процессорах для сложных расчетов. Вентилятор генерирует 100 задач, каждое из которых говорит воркеру спать определенное количество миллисекунд.
 
-Example 9. Parallel task worker (taskwork.c)
+###### Пример 8. Вентелятор для параллельных задач (Parallel task ventilator) (taskvent.c)
 
-А вот наше приложение для сбора результатов. Оно собирает данные от 100 задач и срачитывает как долго они выполнялись. Так мы сможе убедиться что задачи выполнялись параллельно, если воркеров было несколько.
+```C
+//  Task ventilator
+//  Binds PUSH socket to tcp://localhost:5557
+//  Sends batch of tasks to workers via that socket
 
-Example 10. Parallel task sink (tasksink.c)
+#include "zhelpers.h"
+
+int main (void)
+{
+    void *context = zmq_ctx_new ();
+
+    //  Socket to send messages on
+    void *sender = zmq_socket (context, ZMQ_PUSH);
+    zmq_bind (sender, "tcp://*:5557");
+
+    //  Socket to send start of batch message on
+    void *sink = zmq_socket (context, ZMQ_PUSH);
+    zmq_connect (sink, "tcp://localhost:5558");
+
+    printf ("Press Enter when the workers are ready: ");
+    getchar ();
+    printf ("Sending tasks to workers…\n");
+
+    //  The first message is "0" and signals start of batch
+    s_send (sink, "0");
+
+    //  Initialize random number generator
+    srandom ((unsigned) time (NULL));
+
+    //  Send 100 tasks
+    int task_nbr;
+    int total_msec = 0;     //  Total expected cost in msecs
+    for (task_nbr = 0; task_nbr < 100; task_nbr++) {
+        int workload;
+        //  Random workload from 1 to 100msecs
+        workload = randof (100) + 1;
+        total_msec += workload;
+        char string [10];
+        sprintf (string, "%d", workload);
+        s_send (sender, string);
+    }
+    printf ("Total expected cost: %d msec\n", total_msec);
+
+    zmq_close (sink);
+    zmq_close (sender);
+    zmq_ctx_destroy (context);
+    return 0;
+}
+```
+[C++](http://zguide.zeromq.org/cpp:taskvent) | [C#](http://zguide.zeromq.org/cs:taskvent) | [Clojure](http://zguide.zeromq.org/clj:taskvent) | [CL]http://zguide.zeromq.org/lisp:taskvent) | [Delphi](http://zguide.zeromq.org/dpr:taskvent) | [Erlang](http://zguide.zeromq.org/es:taskvent) | [F#](http://zguide.zeromq.org/fsx:taskvent) | [Felix](http://zguide.zeromq.org/flx:taskvent) | [Go](http://zguide.zeromq.org/go:taskvent) | [Haskell](http://zguide.zeromq.org/hs:taskvent) | [Haxe](http://zguide.zeromq.org/hx:taskvent) | [Java](http://zguide.zeromq.org/java:Taskvent) | [Lua](http://zguide.zeromq.org/lua:taskvent) | [Node.js](http://zguide.zeromq.org/js:taskvent) | [Objective-C](http://zguide.zeromq.org/m:taskvent) | [Perl](http://zguide.zeromq.org/pl:taskvent) | [PHP]http://zguide.zeromq.org/php:taskvent) | [Python](http://zguide.zeromq.org/py:taskvent) | [Ruby](http://zguide.zeromq.org/rb:taskvent) | [Scala](http://zguide.zeromq.org/scala:taskvent) | [Tcl](http://zguide.zeromq.org/tcl:taskvent) | [Ada](http://zguide.zeromq.org/main:translate) | [Basic](http://zguide.zeromq.org/main:translate) | [ooc](http://zguide.zeromq.org/main:translate) | [Q](http://zguide.zeromq.org/main:translate) | [Racket](http://zguide.zeromq.org/main:translate)
+
+А вот пример воркера. Он получает сообщение, спит определенное количество секунд, после чего сообщает что он закончил.
+
+###### Пример 9. Параллельний воркер (taskwork.c)
+
+```C
+//  Task worker
+//  Connects PULL socket to tcp://localhost:5557
+//  Collects workloads from ventilator via that socket
+//  Connects PUSH socket to tcp://localhost:5558
+//  Sends results to sink via that socket
+
+#include "zhelpers.h"
+
+int main (void)
+{
+    //  Socket to receive messages on
+    void *context = zmq_ctx_new ();
+    void *receiver = zmq_socket (context, ZMQ_PULL);
+    zmq_connect (receiver, "tcp://localhost:5557");
+
+    //  Socket to send messages to
+    void *sender = zmq_socket (context, ZMQ_PUSH);
+    zmq_connect (sender, "tcp://localhost:5558");
+
+    //  Process tasks forever
+    while (1) {
+        char *string = s_recv (receiver);
+        printf ("%s.", string);     //  Show progress
+        fflush (stdout);
+        s_sleep (atoi (string));    //  Do the work
+        free (string);
+        s_send (sender, "");        //  Send results to sink
+    }
+    zmq_close (receiver);
+    zmq_close (sender);
+    zmq_ctx_destroy (context);
+    return 0;
+}
+```
+
+[C++](http://zguide.zeromq.org/cpp:taskwork) | [C#](http://zguide.zeromq.org/cs:taskwork) | [Clojure](http://zguide.zeromq.org/clj:taskwork) | [CL](http://zguide.zeromq.org/lisp:taskwork) | [Delphi](http://zguide.zeromq.org/dpr:taskwork) | [Erlang](http://zguide.zeromq.org/es:taskwork) | [F#](http://zguide.zeromq.org/fsx:taskwork) | [Felix](http://zguide.zeromq.org/flx:taskwork) | [Go](http://zguide.zeromq.org/go:taskwork) | [Haskell]http://zguide.zeromq.org/hs:taskwork) | [Haxe](http://zguide.zeromq.org/hx:taskwork) | [Java](http://zguide.zeromq.org/java:Taskwork) | [Lua](http://zguide.zeromq.org/lua:taskwork) | [Node.js](http://zguide.zeromq.org/js:taskwork) | [Objective-C](http://zguide.zeromq.org/m:taskwork) | [Perl](http://zguide.zeromq.org/pl:taskwork) | [PHP](http://zguide.zeromq.org/php:taskwork) | [Python](http://zguide.zeromq.org/py:taskwork) | [Ruby](http://zguide.zeromq.org/rb:taskwork) | [Scala](http://zguide.zeromq.org/scala:taskwork) | [Tcl](http://zguide.zeromq.org/tcl:taskwork) | [Ada](http://zguide.zeromq.org/main:translate) | [Basic](http://zguide.zeromq.org/main:translate) | [ooc](http://zguide.zeromq.org/main:translate) | [Q](http://zguide.zeromq.org/main:translate) | [Racket](http://zguide.zeromq.org/main:translate)
+
+А вот наше приложение для сбора результатов. Оно собирает данные от 100 задач и рассчитывается время их выполнения. Так мы сможем убедиться что задачи выполнялись параллельно, если воркеров было несколько.
+
+###### Пример 10. Сток асинхронных результатов (tasksink.c)
+
+```C
+//  Task sink
+//  Binds PULL socket to tcp://localhost:5558
+//  Collects results from workers via that socket
+
+#include "zhelpers.h"
+
+int main (void)
+{
+    //  Prepare our context and socket
+    void *context = zmq_ctx_new ();
+    void *receiver = zmq_socket (context, ZMQ_PULL);
+    zmq_bind (receiver, "tcp://*:5558");
+
+    //  Wait for start of batch
+    char *string = s_recv (receiver);
+    free (string);
+
+    //  Start our clock now
+    int64_t start_time = s_clock ();
+
+    //  Process 100 confirmations
+    int task_nbr;
+    for (task_nbr = 0; task_nbr < 100; task_nbr++) {
+        char *string = s_recv (receiver);
+        free (string);
+        if ((task_nbr / 10) * 10 == task_nbr)
+            printf (":");
+        else
+            printf (".");
+        fflush (stdout);
+    }
+    //  Calculate and report duration of batch
+    printf ("Total elapsed time: %d msec\n",
+        (int) (s_clock () - start_time));
+
+    zmq_close (receiver);
+    zmq_ctx_destroy (context);
+    return 0;
+}
+
+```
+[C++](http://zguide.zeromq.org/cpp:tasksink) | [C#](http://zguide.zeromq.org/cs:tasksink) | [Clojure](http://zguide.zeromq.org/clj:tasksink) | [CL](http://zguide.zeromq.org/lisp:tasksink) | [Delphi](http://zguide.zeromq.org/dpr:tasksink) | [Erlang](http://zguide.zeromq.org/es:tasksink) | [F#](http://zguide.zeromq.org/fsx:tasksink) | [Felix](http://zguide.zeromq.org/flx:tasksink) | [Go](http://zguide.zeromq.org/go:tasksink) | [Haskell](http://zguide.zeromq.org/hs:tasksink) | [Haxe](http://zguide.zeromq.org/hx:tasksink) | [Java](http://zguide.zeromq.org/java:Tasksink) | [Lua](http://zguide.zeromq.org/lua:tasksink) | [Node.js](http://zguide.zeromq.org/js:tasksink) | [Objective-C](http://zguide.zeromq.org/m:tasksink) | [Perl](http://zguide.zeromq.org/pl:tasksink) | [PHP](http://zguide.zeromq.org/php:tasksink) | [Python](http://zguide.zeromq.org/py:tasksink) | [Ruby](http://zguide.zeromq.org/rb:tasksink) | [Scala](http://zguide.zeromq.org/scala:tasksink) | [Tcl](http://zguide.zeromq.org/tcl:tasksink) | [Ada](http://zguide.zeromq.org/main:translate) | [Basic](http://zguide.zeromq.org/main:translate) | [ooc](http://zguide.zeromq.org/main:translate) | [Q](http://zguide.zeromq.org/main:translate) | [Racket](http://zguide.zeromq.org/main:translate)
 
 Среднее время выполнения 5 сек. Когда мы запустим 1,2 или 4 воркера мы получим результаты схожие с этими:
 
-1 воркер:  Общее время выполнения 5034 мс
-2 воркера: Общее время выполнения 2421 мс
-4 воркера: Общее время выполнения 1018 мс
+- 1 воркер:  Общее время выполнения 5034 мс
+- 2 воркера: Общее время выполнения 2421 мс
+- 4 воркера: Общее время выполнения 1018 мс
 
-Давайте глубже взглянем на код.
+Давайте подробнее рассмотрим код.
 
-* Воркеры читают данные из вентилятора и отправляют их в сток. Это означает что вы можете произвольно добавлять воркеров. Если бы конечные точки задавались на воркерах вам прошлось бы (1). Использовать больше конечных точек и (2) Постоянно перезапускать вентилятор и сток, как только вы добавили воркера. По этому мы решили что вентилятор и раковина будут статичными, а воркеры динамичными.
+* Воркеры читают данные из вентилятора и отправляют их в сток. Это означает что вы можете произвольно добавлять воркеров. Если бы конечные точки задавались на воркерах вам пришлось бы: Первое - использовать больше конечных точек и второе - постоянно перезапускать вентилятор и сток, как только вы добавили воркера. Поэтому мы решили, что вентилятор и сток будут статичными, а воркеры динамичными.
 
-* Мы должны синхронизировать начало запуска со всеми подключившимися воркерами. Это жовольно распространенная проблема встречающаяся в Зере и не существует волшебной таблетки. Метод zmq_connect занимает определенное время. По этому первый из воркеров который подключился, получит всю пачку задач пока все остальные подключаются. Если вы не синхронизируете запуск всей пачки сообщений, система не будет работать параллельно. Можете попробовать и убрать ожидание в вентиляторе.
+* Мы должны синхронизировать начало отправки со всеми подключившимися воркерами. Это довольно распространенная проблема встречающаяся в Зере и волшебной таблетки увы не существует. Метод zmq_connect занимает определенное время. Поэтому первый подключившийся воркер, успеет получить и обработать всю пачку задач пока все остальные подключаются. Если вы не синхронизируете запуск всей пачки сообщений, система не будет работать параллельно. Можете попробовать и убрать ожидание в вентиляторе.
 
-* PUSH сокет вентилятора распределяет задачи между воркерами равномерно(при условии что они все подключились к моменту раздачи). Это называется "балансировкой нагрузки"(load
-balancing). Это мы опять же рассмотрим позже.
+* PUSH сокет вентилятора равномерно распределяет задачи между воркерами(при условии что они все подключились к моменту раздачи). Это называется "балансировкой нагрузки"(load-balancing). Это мы опять же рассмотрим позже.
 
-* PULL сокет слива собирает результаты от воркеров равномерно это называется "справедливой очередью" (fairqueuing) (см. рисунок 6).
+* PULL сокет стока, равномерно собирает результаты от воркеров.Это называется "справедливой очередью" (fair-queuing) (см. рисунок 6).
 
-Конвеерному паттерну(pipeline pattern) так же свойственен синдром "тормоза"(slow joiner), что приводит к обвинению в том что PUSH сокет не правильно использует балансировщик нагрузки. Если вы используете пару PUSH/PULL и один из вашир воркеров получает больше задач чем остальные, это связано с тем что PULL сокет вашего воркера быстрее подключается чем остальные, и хапает слишком много сообщений, пока другие не подключились. Если вы ищите способы правильной балансировки то вам необходимо прочитать на "Продвинутые паттерны запрос-ответ"(Advanced
-Request-Reply Pattern) 
+###### Рисунок 6. Справедливая очередь (fair-queuing)
+
+![](https://github.com/imatix/zguide/raw/master/images/fig6.png)
+
+Конвейерному паттерну(pipeline pattern) также свойственен синдром "тормознутого присоединения"(slow joiner), что приводит к мысли, что PUSH сокет неправильно использует балансировщик нагрузки. Если вы используете пару PUSH/PULL и один из ваших воркеров получает больше задач чем остальные, это связано с тем, что PULL сокет вашего воркера быстрее подключается чем остальные, и хапает слишком много сообщений, пока другие не подключились. Если вы ищите способы правильной балансировки, то вам необходимо прочитать Главу 3 - "Продвинутые паттерны запрос-ответ" (Advanced
+Request-Reply Pattern).
+
 
 ### ПРОГРАММИРОВАНИЕ С ЗЕРОЙ. (Programming with ØMQ)
 
