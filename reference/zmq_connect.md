@@ -18,7 +18,7 @@ int zmq_connect (void *socket, const char *endpoint);
 ZeroMQ предоставляет следующие транспорты:
 
 - **tcp** 
-	Однонаправленный транспорт TCP, подробнее [zmq_tcp(3)](zmq_tcp.md)
+	Однонаправленный транспорт TCP, подробнее [zmq_tcp(7)](zmq_tcp.md)
 - **ipc**
 	Локальный inter-process(межпроцессный) транспорт, подробнее [zmq_ipc(7)](zmq_ipcю.md)
 - **inproc**
