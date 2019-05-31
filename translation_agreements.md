@@ -11,3 +11,5 @@ inter-process - межпроцессный
 IPC может называться терминами межпотоковое взаимодействие (англ. inter-thread communication) и межпрограммное взаимодействие (англ. inter-application communication).
 
 inproc - межпотоковое
+handshake - хендшейк
+peer - пир
