@@ -401,14 +401,16 @@ size_t id_size = 256;
 /* Структура для хранения полученных данных ZMQ_STREAM*/
 uint8_t raw [256];
 size_t raw_size = 256;
+
 while (1) {
  /* Получение HTTP запроса; ID фрейма и запрос */
  id_size = zmq_recv (socket, id, 256, 0);
  assert (id_size > 0);
  do {
- raw_size = zmq_recv (socket, raw, 256, 0);
- assert (raw_size >= 0);
+ 	raw_size = zmq_recv (socket, raw, 256, 0);
+ 	assert (raw_size >= 0);
  } while (raw_size == 256);
+
  /* Подготовка ответа */
  char http_response [] =
  "HTTP/1.0 200 OK\r\n"
@@ -430,16 +432,21 @@ zmq_close (socket); zmq_ctx_destroy (ctx);
 
 **Проксирование**
 ```
-xpub = ctx.socket(ZMQ_XPUB);
-xpub.bind(xpub_url);
+void *ctx = zmq_ctx_new ();
 
-xsub = ctx.socket(ZMQ_XSUB);
-xsub.bind(xsub_url);
+void *xpub = zmq_socket(ctx, ZMQ_XPUB);
+int rc = zmq_bind(xpub, "tcp://*:8080");
 
-pub = ctx.socket(ZMQ_PUB);
-pub.bind(pub_url);
+void *xpub = zmq_socket(ctx, ZMQ_XSUB);
+int rc1 = zmq_bind(xpub, "tcp://*:8081");
 
-zmq_proxy(xpub, xsub, pub);
+void *xpub = zmq_socket(ctx, ZMQ_XSUB);
+int rc2 = zmq_bind(xpub, "tcp://*:8081");
+
+void *pub = zmq_socket(ctx, ZMQ_PUB);
+int rc = zmq_bind(xpub, "tcp://*:8082");
+
+zmq_proxy (xpub, xsub, pub);
 ```
 ## Смотрите также
 [zmq_init(3)](zmq_init.md) [zmq_setsockopt(3)](zmq_setsockopt.md) [zmq_bind(3)](zmq_setsockopt.md) [zmq_connect(3)](zmq_connect.md) [zmq_send(3)](zmq_send.md) [zmq_recv(3)](zmq_recv.md) [zmq_inproc(7)](zmq_inproc.md) [zmq(7)](zmq.md)
