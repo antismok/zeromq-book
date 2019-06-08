@@ -435,16 +435,13 @@ zmq_close (socket); zmq_ctx_destroy (ctx);
 void *ctx = zmq_ctx_new ();
 
 void *xpub = zmq_socket(ctx, ZMQ_XPUB);
-int rc = zmq_bind(xpub, "tcp://*:8080");
+int rc = zmq_bind(xpub, "tcp://127.0.0.1:8080");
 
 void *xpub = zmq_socket(ctx, ZMQ_XSUB);
-int rc1 = zmq_bind(xpub, "tcp://*:8081");
-
-void *xpub = zmq_socket(ctx, ZMQ_XSUB);
-int rc2 = zmq_bind(xpub, "tcp://*:8081");
+int rc1 = zmq_bind(xpub, "tcp://127.0.0.1:8081");
 
 void *pub = zmq_socket(ctx, ZMQ_PUB);
-int rc = zmq_bind(xpub, "tcp://*:8082");
+int rc2 = zmq_bind(xpub, "tcp://127.0.0.1:8082");
 
 zmq_proxy (xpub, xsub, pub);
 ```
